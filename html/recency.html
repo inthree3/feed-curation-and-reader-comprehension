@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Media &amp; Belief Study</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--text:#0f1419;--muted:#536471;--border:#eff3f4;
+  --accent:#1d9bf0;--accent-hover:#1a8cd8;
+  --card:#fff;--input-bg:#f7f9f9;
+  --xbg:#000;--xtext:#e7e9ea;--xmuted:#71767b;--xborder:#2f3336;
+  --xpanel:#16181c;--like:#f91880;--rt:#00ba7c;
+}
+
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+
+/* ─── SURVEY CHROME ─── */
+.survey-wrap{max-width:680px;margin:0 auto;padding:24px 20px 60px}
+.progress-bar{position:fixed;top:0;left:0;height:4px;background:var(--accent);transition:width .4s ease;z-index:100}
+.page{display:none}
+.page.active{display:block}
+
+.page-label{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);font-weight:700;margin-bottom:4px}
+.page-title{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.page-sub{color:var(--muted);font-size:15px;margin-bottom:32px}
+
+/* Question blocks */
+.q{margin-bottom:28px}
+.q-label{font-size:15px;font-weight:600;margin-bottom:10px;display:block}
+.q-num{color:var(--accent);margin-right:6px}
+
+/* Radio / button groups */
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{background:var(--input-bg);border:1.5px solid var(--border);color:var(--text);padding:9px 18px;border-radius:9999px;font-size:14px;cursor:pointer;transition:all .15s;user-select:none}
+.opt:hover{border-color:var(--accent);background:#f0f7fe}
+.opt.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Likert scale */
+.likert{display:flex;align-items:center;gap:0;margin-top:4px}
+.likert-label{font-size:12px;color:var(--muted);min-width:65px}
+.likert-label.right{text-align:right}
+.likert .dots{display:flex;gap:0;flex:1}
+.likert .dot-btn{flex:1;padding:12px 0;text-align:center;font-size:14px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--input-bg);color:var(--muted);transition:all .15s}
+.likert .dot-btn:first-child{border-radius:8px 0 0 8px}
+.likert .dot-btn:last-child{border-radius:0 8px 8px 0}
+.likert .dot-btn:hover{background:#f0f7fe;color:var(--text)}
+.likert .dot-btn.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Confidence slider */
+.slider-row{display:flex;align-items:center;gap:12px;margin-top:6px}
+.slider-row input[type=range]{flex:1;accent-color:var(--accent)}
+.slider-val{min-width:36px;font-weight:700;font-size:15px;text-align:center}
+
+/* Text input */
+.text-input{width:100%;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:15px;color:var(--text);outline:none;transition:border .15s}
+.text-input:focus{border-color:var(--accent)}
+
+/* Nav buttons */
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:36px;padding-top:20px;border-top:1px solid var(--border)}
+.btn{padding:12px 28px;border-radius:9999px;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;border:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-back{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-back:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ─── FEED (Twitter/X dark theme, scoped) ─── */
+.feed-container{background:var(--xbg);border-radius:16px;overflow:hidden;margin:20px 0;max-height:600px;overflow-y:auto;border:1px solid var(--xborder)}
+.feed-container::-webkit-scrollbar{width:8px}
+.feed-container::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+
+.feed-header-x{position:sticky;top:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);padding:14px 16px;z-index:5;border-bottom:1px solid var(--xborder)}
+.feed-header-x h2{font-size:18px;font-weight:800;color:var(--xtext)}
+
+.tweet{display:grid;grid-template-columns:42px 1fr;gap:10px;padding:12px 16px;border-bottom:1px solid var(--xborder);color:var(--xtext);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.tweet-body{min-width:0}
+.tweet-head{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:14px}
+.name{font-weight:700;color:var(--xtext)}
+.verified{color:var(--accent);display:inline-flex}
+.handle,.dot-sep,.timestamp{color:var(--xmuted);font-size:13px}
+.tweet-text{margin-top:2px;font-size:15px;line-height:1.3;color:var(--xtext)}
+.tweet-text.t-title{font-weight:500}
+
+.link-card{display:block;margin-top:8px;border:1px solid var(--xborder);border-radius:12px;overflow:hidden;text-decoration:none;color:inherit;transition:background .15s}
+.link-card:hover{background:rgba(231,233,234,.05)}
+.lc-body{padding:10px 12px}
+.lc-domain{color:var(--xmuted);font-size:12px;display:flex;align-items:center;gap:4px}
+.lc-title{color:var(--xtext);font-size:14px;font-weight:500;margin-top:3px;display:block;line-height:1.25}
+.lc-desc{color:var(--xmuted);font-size:13px;margin-top:3px;display:block;line-height:1.35}
+
+.actions-x{display:flex;justify-content:space-between;max-width:380px;margin-top:8px;color:var(--xmuted);font-size:12px}
+.action-x{display:flex;align-items:center;gap:4px;cursor:pointer;padding:3px}
+.action-icon{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* Promoted */
+.tweet.ad{background:rgba(29,155,240,.02)}
+.promoted-label{color:var(--xmuted);font-size:12px;display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.ad-card{margin-top:8px;border:1px solid var(--xborder);border-radius:12px;overflow:hidden}
+.ad-banner{height:120px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff}
+.ad-meta{padding:8px 12px;font-size:12px;color:var(--xmuted);display:flex;justify-content:space-between;border-top:1px solid var(--xborder)}
+.ad-cta{color:var(--xtext);font-weight:600}
+
+.scroll-hint{text-align:center;padding:14px;color:var(--xmuted);font-size:13px;border-top:1px solid var(--xborder);background:var(--xbg)}
+
+/* Thank-you */
+.thanks-card{text-align:center;padding:48px 24px;margin-top:40px}
+.thanks-card h2{font-size:32px;font-weight:800}
+.thanks-card p{color:var(--muted);margin-top:12px;font-size:15px;line-height:1.6}
+
+/* T/F/NEI question compound */
+.tfn-block{background:var(--input-bg);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:20px}
+.tfn-block .q-label{margin-bottom:8px}
+.tfn-block .opts{margin-bottom:10px}
+.conf-label{font-size:13px;color:var(--muted);margin-bottom:2px}
+
+@media(max-width:600px){
+  .survey-wrap{padding:16px 14px 48px}
+  .page-title{font-size:22px}
+  .opts{gap:6px}
+  .opt{padding:8px 14px;font-size:13px}
+}
+</style>
+</head>
+<body>
+<div class="progress-bar" style="width:12.5%"></div>
+
+<!-- Survey data now sent to Google Sheets via Apps Script -->
+
+<!-- Visible survey (no data-netlify — submission handled via JS) -->
+<div id="surveyForm">
+
+<div class="survey-wrap">
+
+<!-- ════════════ PAGE 0: INTRO ════════════ -->
+<div class="page active" id="p0">
+  <div class="page-label">About this study</div>
+  <div class="page-title">Before we begin</div>
+  <div class="page-sub">You will read a social media news feed about a real international event from May 2024, then answer questions about it. Takes 8–10 minutes. All responses are anonymous.</div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">1</span>Before today, how familiar were you with the shooting of Slovak Prime Minister Robert Fico in May 2024?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q1_familiarity','1',this)">1 — Not at all</span>
+      <span class="opt" onclick="pick('q1_familiarity','2',this)">2</span>
+      <span class="opt" onclick="pick('q1_familiarity','3',this)">3</span>
+      <span class="opt" onclick="pick('q1_familiarity','4',this)">4</span>
+      <span class="opt" onclick="pick('q1_familiarity','5',this)">5 — Extremely</span>
+    </div>
+  </div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">2</span>Had you followed news coverage of this event prior to this study?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q2_prior','Yes',this)">Yes</span>
+      <span class="opt" onclick="pick('q2_prior','No',this)">No</span>
+      <span class="opt" onclick="pick('q2_prior','Vague',this)">Vague memory, didn't follow closely</span>
+    </div>
+  </div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">3</span>What is your primary source of news?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q3_news_source','Social media',this)">Social media</span>
+      <span class="opt" onclick="pick('q3_news_source','TV',this)">TV</span>
+      <span class="opt" onclick="pick('q3_news_source','Online news',this)">Online news sites</span>
+      <span class="opt" onclick="pick('q3_news_source','Newspapers',this)">Newspapers</span>
+      <span class="opt" onclick="pick('q3_news_source','Podcasts/radio',this)">Podcasts / radio</span>
+      <span class="opt" onclick="pick('q3_news_source','None',this)">Don't follow news</span>
+    </div>
+  </div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">4</span>How often do you follow international news?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q4_intl_freq','Never',this)">Never</span>
+      <span class="opt" onclick="pick('q4_intl_freq','Rarely',this)">Rarely</span>
+      <span class="opt" onclick="pick('q4_intl_freq','Sometimes',this)">Sometimes</span>
+      <span class="opt" onclick="pick('q4_intl_freq','Often',this)">Often</span>
+      <span class="opt" onclick="pick('q4_intl_freq','Always',this)">Always</span>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <div></div>
+    <button type="button" class="btn btn-primary" onclick="next()">Continue →</button>
+  </div>
+</div>
+
+<!-- ════════════ PAGE 1: FEED ════════════ -->
+<div class="page" id="p1">
+  <div class="page-label">News feed</div>
+  <div class="page-title">Read through the feed below</div>
+  <div class="page-sub">Scroll through the feed and read the posts as you normally would. Click any article to read the full story. When you're done, continue to the next section.</div>
+
+  <div class="feed-container">
+    <div class="feed-header-x"><h2>For you</h2></div>
+    <div id="feed"></div>
+    <div class="scroll-hint">You've reached the end of the feed</div>
+  </div>
+
+  <div class="q" style="margin-top:24px">
+    <span class="q-label"><span class="q-num">5</span>Roughly how many posts did you read in full?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q5_read_count','0',this)">0 — none</span>
+      <span class="opt" onclick="pick('q5_read_count','1-3',this)">1–3</span>
+      <span class="opt" onclick="pick('q5_read_count','4-6',this)">4–6</span>
+      <span class="opt" onclick="pick('q5_read_count','7-10',this)">7–10 (most)</span>
+    </div>
+  </div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">6</span>Did any posts feel like advertisements rather than news?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q6_ads','Yes',this)">Yes</span>
+      <span class="opt" onclick="pick('q6_ads','No',this)">No</span>
+      <span class="opt" onclick="pick('q6_ads','Unsure',this)">Unsure</span>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button type="button" class="btn btn-back" onclick="back()">← Back</button>
+    <button type="button" class="btn btn-primary" onclick="next()">Continue →</button>
+  </div>
+</div>
+
+<!-- ════════════ PAGE 2: T/F/NEI ════════════ -->
+<div class="page" id="p2">
+  <div class="page-label">Questions about the event</div>
+  <div class="page-title">True, False, or Not enough information?</div>
+  <div class="page-sub">Based on what you read in the feed, select your answer for each statement. Then rate your confidence from 0–100.</div>
+
+  <div class="tfn-block">
+  <span class="q-label"><span class="q-num">7</span>Robert Fico was shot in Slovakia's capital city, Bratislava.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q7','True',this)">True</span>
+    <span class="opt" onclick="pick('q7','False',this)">False</span>
+    <span class="opt" onclick="pick('q7','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q7_conf',this)"/>
+    <span class="slider-val" id="q7_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">8</span>The suspect was apprehended at the scene of the shooting.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q8','True',this)">True</span>
+    <span class="opt" onclick="pick('q8','False',this)">False</span>
+    <span class="opt" onclick="pick('q8','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q8_conf',this)"/>
+    <span class="slider-val" id="q8_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">9</span>Robert Fico was shot five times.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q9','True',this)">True</span>
+    <span class="opt" onclick="pick('q9','False',this)">False</span>
+    <span class="opt" onclick="pick('q9','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q9_conf',this)"/>
+    <span class="slider-val" id="q9_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">10</span>The shooting took place after a Slovak government cabinet meeting.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q10','True',this)">True</span>
+    <span class="opt" onclick="pick('q10','False',this)">False</span>
+    <span class="opt" onclick="pick('q10','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q10_conf',this)"/>
+    <span class="slider-val" id="q10_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">11</span>Slovak authorities publicly described the attack as politically motivated.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q11','True',this)">True</span>
+    <span class="opt" onclick="pick('q11','False',this)">False</span>
+    <span class="opt" onclick="pick('q11','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q11_conf',this)"/>
+    <span class="slider-val" id="q11_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">12</span>Robert Fico died from his injuries within 24 hours of the shooting.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q12','True',this)">True</span>
+    <span class="opt" onclick="pick('q12','False',this)">False</span>
+    <span class="opt" onclick="pick('q12','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q12_conf',this)"/>
+    <span class="slider-val" id="q12_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">13</span>The suspected shooter was identified as a 71-year-old man.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q13','True',this)">True</span>
+    <span class="opt" onclick="pick('q13','False',this)">False</span>
+    <span class="opt" onclick="pick('q13','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q13_conf',this)"/>
+    <span class="slider-val" id="q13_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">14</span>The gun used in the attack was legally owned by the suspect.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q14','True',this)">True</span>
+    <span class="opt" onclick="pick('q14','False',this)">False</span>
+    <span class="opt" onclick="pick('q14','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q14_conf',this)"/>
+    <span class="slider-val" id="q14_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">15</span>Both U.S. President Biden and Russian President Putin condemned the attack.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q15','True',this)">True</span>
+    <span class="opt" onclick="pick('q15','False',this)">False</span>
+    <span class="opt" onclick="pick('q15','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q15_conf',this)"/>
+    <span class="slider-val" id="q15_conf_val">50</span>
+  </div>
+</div>
+<div class="tfn-block">
+  <span class="q-label"><span class="q-num">16</span>Robert Fico had been serving as Prime Minister continuously since 2006.</span>
+  <div class="opts">
+    <span class="opt" onclick="pick('q16','True',this)">True</span>
+    <span class="opt" onclick="pick('q16','False',this)">False</span>
+    <span class="opt" onclick="pick('q16','NEI',this)">Not enough information</span>
+  </div>
+  <div class="conf-label">How confident are you? (0 = not at all, 100 = completely certain)</div>
+  <div class="slider-row">
+    <input type="range" min="0" max="100" value="50" oninput="slideConf('q16_conf',this)"/>
+    <span class="slider-val" id="q16_conf_val">50</span>
+  </div>
+</div>
+
+  <div class="nav-row">
+    <button type="button" class="btn btn-back" onclick="back()">← Back</button>
+    <button type="button" class="btn btn-primary" onclick="next()">Continue →</button>
+  </div>
+</div>
+
+<!-- ════════════ PAGE 3: IMPRESSIONS ════════════ -->
+<div class="page" id="p3">
+  <div class="page-label">Your impressions</div>
+  <div class="page-title">How did the feed feel?</div>
+  <div class="page-sub"></div>
+
+  <div class="q">
+  <span class="q-label"><span class="q-num">17</span>How trustworthy did the feed feel overall?</span>
+  <div class="likert">
+    <span class="likert-label">Not at all</span>
+    <div class="dots"><span class="dot-btn" onclick="pickL('q17_trust',0,this)">0</span><span class="dot-btn" onclick="pickL('q17_trust',1,this)">1</span><span class="dot-btn" onclick="pickL('q17_trust',2,this)">2</span><span class="dot-btn" onclick="pickL('q17_trust',3,this)">3</span><span class="dot-btn" onclick="pickL('q17_trust',4,this)">4</span><span class="dot-btn" onclick="pickL('q17_trust',5,this)">5</span><span class="dot-btn" onclick="pickL('q17_trust',6,this)">6</span><span class="dot-btn" onclick="pickL('q17_trust',7,this)">7</span></div>
+    <span class="likert-label right">Extremely</span>
+  </div>
+</div>
+  <div class="q">
+  <span class="q-label"><span class="q-num">18</span>How biased or one-sided did the feed feel?</span>
+  <div class="likert">
+    <span class="likert-label">Not at all</span>
+    <div class="dots"><span class="dot-btn" onclick="pickL('q18_bias',0,this)">0</span><span class="dot-btn" onclick="pickL('q18_bias',1,this)">1</span><span class="dot-btn" onclick="pickL('q18_bias',2,this)">2</span><span class="dot-btn" onclick="pickL('q18_bias',3,this)">3</span><span class="dot-btn" onclick="pickL('q18_bias',4,this)">4</span><span class="dot-btn" onclick="pickL('q18_bias',5,this)">5</span><span class="dot-btn" onclick="pickL('q18_bias',6,this)">6</span><span class="dot-btn" onclick="pickL('q18_bias',7,this)">7</span></div>
+    <span class="likert-label right">Extremely</span>
+  </div>
+</div>
+  <div class="q">
+  <span class="q-label"><span class="q-num">19</span>How emotionally activated do you feel right now — for example, anxious or angry?</span>
+  <div class="likert">
+    <span class="likert-label">Not at all</span>
+    <div class="dots"><span class="dot-btn" onclick="pickL('q19_emotion',0,this)">0</span><span class="dot-btn" onclick="pickL('q19_emotion',1,this)">1</span><span class="dot-btn" onclick="pickL('q19_emotion',2,this)">2</span><span class="dot-btn" onclick="pickL('q19_emotion',3,this)">3</span><span class="dot-btn" onclick="pickL('q19_emotion',4,this)">4</span><span class="dot-btn" onclick="pickL('q19_emotion',5,this)">5</span><span class="dot-btn" onclick="pickL('q19_emotion',6,this)">6</span><span class="dot-btn" onclick="pickL('q19_emotion',7,this)">7</span></div>
+    <span class="likert-label right">Extremely</span>
+  </div>
+</div>
+
+  <div class="nav-row">
+    <button type="button" class="btn btn-back" onclick="back()">← Back</button>
+    <button type="button" class="btn btn-primary" onclick="next()">Continue →</button>
+  </div>
+</div>
+
+<!-- ════════════ PAGE 4: MORE Qs ════════════ -->
+<div class="page" id="p4">
+  <div class="page-label">A few more questions</div>
+  <div class="page-title">About the content of the feed</div>
+  <div class="page-sub"></div>
+
+  <div class="q">
+  <span class="q-label"><span class="q-num">20</span>How much did the posts seem to contradict each other?</span>
+  <div class="likert">
+    <span class="likert-label">Not at all</span>
+    <div class="dots"><span class="dot-btn" onclick="pickL('q20_contradict',0,this)">0</span><span class="dot-btn" onclick="pickL('q20_contradict',1,this)">1</span><span class="dot-btn" onclick="pickL('q20_contradict',2,this)">2</span><span class="dot-btn" onclick="pickL('q20_contradict',3,this)">3</span><span class="dot-btn" onclick="pickL('q20_contradict',4,this)">4</span><span class="dot-btn" onclick="pickL('q20_contradict',5,this)">5</span><span class="dot-btn" onclick="pickL('q20_contradict',6,this)">6</span><span class="dot-btn" onclick="pickL('q20_contradict',7,this)">7</span></div>
+    <span class="likert-label right">A great deal</span>
+  </div>
+</div>
+  <div class="q">
+  <span class="q-label"><span class="q-num">21</span>How emotionally charged did the language feel?</span>
+  <div class="likert">
+    <span class="likert-label">Very calm</span>
+    <div class="dots"><span class="dot-btn" onclick="pickL('q21_charged',0,this)">0</span><span class="dot-btn" onclick="pickL('q21_charged',1,this)">1</span><span class="dot-btn" onclick="pickL('q21_charged',2,this)">2</span><span class="dot-btn" onclick="pickL('q21_charged',3,this)">3</span><span class="dot-btn" onclick="pickL('q21_charged',4,this)">4</span><span class="dot-btn" onclick="pickL('q21_charged',5,this)">5</span><span class="dot-btn" onclick="pickL('q21_charged',6,this)">6</span><span class="dot-btn" onclick="pickL('q21_charged',7,this)">7</span></div>
+    <span class="likert-label right">Very charged</span>
+  </div>
+</div>
+  <div class="q">
+  <span class="q-label"><span class="q-num">22</span>How much background context did the posts provide — who Fico is, his history, what led to the shooting?</span>
+  <div class="likert">
+    <span class="likert-label">No context</span>
+    <div class="dots"><span class="dot-btn" onclick="pickL('q22_context',0,this)">0</span><span class="dot-btn" onclick="pickL('q22_context',1,this)">1</span><span class="dot-btn" onclick="pickL('q22_context',2,this)">2</span><span class="dot-btn" onclick="pickL('q22_context',3,this)">3</span><span class="dot-btn" onclick="pickL('q22_context',4,this)">4</span><span class="dot-btn" onclick="pickL('q22_context',5,this)">5</span><span class="dot-btn" onclick="pickL('q22_context',6,this)">6</span><span class="dot-btn" onclick="pickL('q22_context',7,this)">7</span></div>
+    <span class="likert-label right">A great deal</span>
+  </div>
+</div>
+
+  <div class="nav-row">
+    <button type="button" class="btn btn-back" onclick="back()">← Back</button>
+    <button type="button" class="btn btn-primary" onclick="next()">Continue →</button>
+  </div>
+</div>
+
+<!-- ════════════ PAGE 5: ATTENTION CHECK ════════════ -->
+<div class="page" id="p5">
+  <div class="page-label">Almost done</div>
+  <div class="page-title">One more check</div>
+  <div class="page-sub"></div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">23</span>This question checks that you are reading carefully. Please select "Somewhat agree".</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q23_attention','Strongly disagree',this)">Strongly disagree</span>
+      <span class="opt" onclick="pick('q23_attention','Disagree',this)">Disagree</span>
+      <span class="opt" onclick="pick('q23_attention','Somewhat agree',this)">Somewhat agree</span>
+      <span class="opt" onclick="pick('q23_attention','Agree',this)">Agree</span>
+      <span class="opt" onclick="pick('q23_attention','Strongly agree',this)">Strongly agree</span>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button type="button" class="btn btn-back" onclick="back()">← Back</button>
+    <button type="button" class="btn btn-primary" onclick="next()">Continue →</button>
+  </div>
+</div>
+
+<!-- ════════════ PAGE 6: DEMOGRAPHICS ════════════ -->
+<div class="page" id="p6">
+  <div class="page-label">About you</div>
+  <div class="page-title">Finally, a few questions about yourself</div>
+  <div class="page-sub"></div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">24</span>What is your age?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q24_age','18-24',this)">18–24</span>
+      <span class="opt" onclick="pick('q24_age','25-34',this)">25–34</span>
+      <span class="opt" onclick="pick('q24_age','35-44',this)">35–44</span>
+      <span class="opt" onclick="pick('q24_age','45-54',this)">45–54</span>
+      <span class="opt" onclick="pick('q24_age','55-64',this)">55–64</span>
+      <span class="opt" onclick="pick('q24_age','65+',this)">65+</span>
+      <span class="opt" onclick="pick('q24_age','Prefer not',this)">Prefer not to say</span>
+    </div>
+  </div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">25</span>Highest level of education completed?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q25_education','<HS',this)">Less than high school</span>
+      <span class="opt" onclick="pick('q25_education','HS',this)">High school / GED</span>
+      <span class="opt" onclick="pick('q25_education','Some college',this)">Some college</span>
+      <span class="opt" onclick="pick('q25_education','Associates',this)">Associate's</span>
+      <span class="opt" onclick="pick('q25_education','Bachelors',this)">Bachelor's</span>
+      <span class="opt" onclick="pick('q25_education','Masters',this)">Master's</span>
+      <span class="opt" onclick="pick('q25_education','Doctoral',this)">Doctoral / professional</span>
+      <span class="opt" onclick="pick('q25_education','Prefer not',this)">Prefer not to say</span>
+    </div>
+  </div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">26</span>What country do you currently live in?</span>
+    <input class="text-input" type="text" placeholder="e.g. United States" oninput="textIn('q26_country',this)"/>
+  </div>
+
+  <div class="q">
+    <span class="q-label"><span class="q-num">27</span>How would you describe your political views?</span>
+    <div class="opts">
+      <span class="opt" onclick="pick('q27_politics','1',this)">1 — Very liberal</span>
+      <span class="opt" onclick="pick('q27_politics','2',this)">2</span>
+      <span class="opt" onclick="pick('q27_politics','3',this)">3</span>
+      <span class="opt" onclick="pick('q27_politics','4',this)">4 — Moderate</span>
+      <span class="opt" onclick="pick('q27_politics','5',this)">5</span>
+      <span class="opt" onclick="pick('q27_politics','6',this)">6</span>
+      <span class="opt" onclick="pick('q27_politics','7',this)">7 — Very conservative</span>
+      <span class="opt" onclick="pick('q27_politics','Prefer not',this)">Prefer not to say</span>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button type="button" class="btn btn-back" onclick="back()">← Back</button>
+    <button type="button" class="btn btn-primary" onclick="submitSurvey()">Submit →</button>
+  </div>
+</div>
+
+<!-- ════════════ PAGE 7: THANK YOU ════════════ -->
+<div class="page" id="p7">
+  <div class="thanks-card">
+    <h2>Thank you!</h2>
+    <p>Your responses have been recorded.</p>
+    <p style="margin-top:20px"><strong>Debriefing note:</strong> This study examined how different types of news feeds affect understanding of real events. The event you read about — the shooting of Slovak Prime Minister Robert Fico on May 15, 2024 — was real. Fico survived and recovered. Your participation helps us understand how media curation shapes what people learn from the news.</p>
+  </div>
+</div>
+
+</div><!-- .survey-wrap -->
+</div><!-- #surveyForm -->
+
+<script>
+// Fico shooting coverage - articles from graded Excel sheet (filtered to verified URLs)
+// Timestamps assigned based on content evolution within the first ~24h window
+window.ARTICLES = [
+  { id: 1, url: "https://edition.cnn.com/europe/live-news/robert-fico-slovakia-prime-minister-shooting-05-15-24/h_fd16cf101ec837997528ad2ff33075ac", title: "What we know about the assassination attempt on Slovakia prime minister", domain: "edition.cnn.com", country: "United States", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T20:00:00", notes: "CNN live updates. Names Deputy PM Taraba, defense/interior ministers. Hedging + timeline + political context." },
+  { id: 2, url: "https://www.cnn.com/2024/05/16/europe/slovakia-prime-minister-fico-out-of-danger-intl-hnk/", title: "Robert Fico: Slovakia prime minister out of \'life-threatening situation\' following surgery", domain: "cnn.com", country: "United States", evidence: 3, uncertainty: 3, context: 3, affective: 1, conflict: 2, cta: 1, ts: "2024-05-16T03:00:00", notes: "CNN detailed report. Multiple named officials with extended quotes. \'Lone wolf\' charged. Explicitly states what\'s confirmed vs unconfirmed." },
+  { id: 3, url: "https://apnews.com/article/slovakia-prime-minister-shooting-robert-fico-handlova-bdaaf0bba01035a700145a67d871a482", title: "Slovakian Prime Minister Robert Fico expected to survive shooting, deputy says", domain: "apnews.com", country: "United States", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T23:15:00", notes: "AP wire. Names officials with quotes. Standard hedging. Timeline of events." },
+  { id: 4, url: "https://www.npr.org/2024/05/15/1251543187/slovakia-prime-minister-robert-fico-shot", title: "Slovakia Prime Minister Robert Fico is shot and seriously wounded", domain: "npr.org", country: "United States", evidence: 2, uncertainty: 2, context: 3, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T16:15:00", notes: "NPR report. Detailed political background on Fico\'s stance on Ukraine and EU relations. Hedging language. Timeline of events and broader European context." },
+  { id: 5, url: "https://www.foxnews.com/world/slovakia-prime-minister-expected-survive-assassination-attempt-shock-across-europe", title: "Slovakia prime minister expected to survive assassination attempt as shock reverberates", domain: "foxnews.com", country: "United States", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T22:00:00", notes: "Fox News — expected to survive. Names Defense Min, Deputy PM, Interior Min with quotes. Hedging. Timeline + politics." },
+  { id: 6, url: "https://www.foxnews.com/world/suspect-shot-slovakia-prime-minister-robert-fico-reveals-possible-motive-report", title: "Suspect who shot Slovakia PM Fico reveals possible motive: report", domain: "foxnews.com", country: "United States", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T03:30:00", notes: "Fox News report on suspect\'s possible motive. Names officials. Hedging language around developing details. Timeline and political context." },
+  { id: 7, url: "https://www.oann.com/newsroom/slovakias-prime-minister-shot-in-attempted-assassination/", title: "Slovakia Prime Minister Shot In Attempted Assassination, In Life Threatening Condition", domain: "oann.com", country: "United States", evidence: 2, uncertainty: 2, context: 1, affective: 2, conflict: 2, cta: 1, ts: "2024-05-15T17:45:00", notes: "OAN. Names officials + embeds conspiratorial social media post linking shooting to WHO Pandemic Accord rejection." },
+  { id: 8, url: "https://thenewamerican.com/news/slovakian-prime-minister-shot-in-life-threatening-condition/", title: "Slovakian Prime Minister Shot, in Life-threatening Condition", domain: "thenewamerican.com", country: "United States", evidence: 2, uncertainty: 1, context: 2, affective: 2, conflict: 2, cta: 1, ts: "2024-05-15T18:00:00", notes: "The New American. Names Caputova, quotes Fico speeches. Definitive tone. Political background (COVID lockdowns, Ukraine)." },
+  { id: 9, url: "https://www.aljazeera.com/news/2024/5/15/world-reacts-to-slovakia-prime-minister-robert-fico-being-shot", title: "World reacts to Slovakia Prime Minister Robert Fico being shot", domain: "aljazeera.com", country: "Qatar", evidence: 2, uncertainty: 1, context: 2, affective: 2, conflict: 3, cta: 1, ts: "2024-05-15T20:15:00", notes: "Al Jazeera world reactions piece. Quotes multiple international leaders. Strong adversarial framing of political divisions. Emotionally charged language throughout." },
+  { id: 10, url: "https://www.politico.eu/article/slovak-pm-robert-fico-will-survive-deputy-says/", title: "Slovak PM Robert Fico in \'stable, but very serious\' condition after attempted assassination", domain: "politico.eu", country: "United States", evidence: 3, uncertainty: 3, context: 3, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T19:30:00", notes: "Politico. Names hospital director Lapuniková, Taraba, Kaliňák with direct extended quotes. Explicitly notes evolving conditions." },
+  { id: 11, url: "https://www.tmz.com/2024/05/15/slovakia-prime-minister-robert-fico-shot-life-threatening-condition/", title: "Slovakia Prime Minister Robert Fico Shot, Life-Threatening Condition", domain: "tmz.com", country: "United States", evidence: 2, uncertainty: 3, context: 1, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T20:45:00", notes: "TMZ breaking news report. Brief event description with explicit uncertainty hedging. Minimal background context." },
+  { id: 12, url: "https://www.yahoo.com/news/slovak-pm-no-longer-life-055725437.html", title: "Slovak PM \'no longer in life-threatening condition\' after assassination attempt", domain: "yahoo.com", country: "United States", evidence: 3, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-16T08:15:00", notes: "Yahoo News update. Names multiple officials with direct quotes. Condition upgrade confirmed. Some emotional language in framing." },
+  { id: 13, url: "https://news.antiwar.com/2024/05/15/slovak-prime-minister-robert-fico-in-life-threatening-condition/", title: "Slovak Prime Minister Robert Fico in Life-Threatening Condition After Shooting", domain: "news.antiwar.com", country: "United States", evidence: 2, uncertainty: 2, context: 3, affective: 1, conflict: 2, cta: 1, ts: "2024-05-15T18:30:00", notes: "Antiwar.com. Names officials. Conditional language. Political context about Ukraine/NATO/arms policy. Ideological." },
+  { id: 14, url: "https://www.nbcphiladelphia.com/news/business/money-report/slovakian-prime-minister-fico-injured-in-shooting-media-reports-say/3859075/", title: "Slovakian PM Fico in \'life-threatening\' condition after being shot; EU leaders decry attack", domain: "nbcphiladelphia.com", country: "United States", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T20:00:00", notes: "NBC Philadelphia. Names officials via Facebook page, president. Hedging. Timeline + EU reaction. \'Brutal attack\'." },
+  { id: 15, url: "https://www.fox5atlanta.com/news/slovakias-populist-prime-minister-shot-in-assassination-attempt", title: "Slovakia populist prime minister shot in assassination attempt", domain: "fox5atlanta.com", country: "United States", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T16:00:00", notes: "Fox5 Atlanta / AP wire. Names Defense Minister, Interior Minister. Hedging. Timeline + political context." },
+  { id: 16, url: "https://www.wthr.com/article/news/nation-world/slovakias-prime-minister-shot/507-3ada9791-8043-420e-95c1-d16b19b42b23", title: "Slovakia prime minister shot in the stomach", domain: "wthr.com", country: "United States", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T15:45:00", notes: "WTHR / AP wire pickup. Names officials. Standard hedging. Timeline of events." },
+  { id: 17, url: "https://wset.com/news/nation-world/slovakias-prime-minister-robert-fico-expected-to-survive-assassination-attempt-weeks-before-election-europe-pro-russian-leader-handlova-suspect-in-custody-political-motivation-bansk-bystrica-hospital", title: "Slovakia PM expected to survive assassination attempt weeks before elections", domain: "wset.com", country: "United States", evidence: 3, uncertainty: 3, context: 3, affective: 1, conflict: 2, cta: 1, ts: "2024-05-15T22:15:00", notes: "Yahoo/AP detailed. Names Interior Min, hospital official with extended quotes. \'Lone wolf\' detail. Explicitly addresses uncertainty." },
+  { id: 18, url: "https://www.wpsdlocal6.com/news/slovakia-s-prime-minister-fico-in-life-threatening-condition-after-being-shot-multiple-times/article_bd91eb5e-12bd-11ef-9c21-e7c853ff048e.html", title: "Slovakia PM Fico in life-threatening condition after being shot multiple times", domain: "wpsdlocal6.com", country: "United States", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T18:45:00", notes: "WSET / CNN. Names Defense Min Kaliňák with quotes. Hedging. Timeline of events." },
+  { id: 19, url: "https://www.ksl.com:443/article/51013687/slovak-prime-minister-in-life-threatening-condition-after-assassination-attempt-government-says", title: "Slovak prime minister in life-threatening condition after assassination attempt, officials say", domain: "ksl.com", country: "United States", evidence: 2, uncertainty: 2, context: 1, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T16:30:00", notes: "KSL / Reuters wire. Names Reuters witness, officials. Conditional language. Brief — mostly event description." },
+  { id: 20, url: "https://www.bbc.co.uk/news/world-europe-69019121", title: "Slovakia PM Robert Fico not in life-threatening condition - deputy PM", domain: "bbc.co.uk", country: "United Kingdom", evidence: 3, uncertainty: 3, context: 3, affective: 1, conflict: 2, cta: 1, ts: "2024-05-15T23:30:00", notes: "BBC detailed report. Names hospital director, Taraba, Interior Min with extended quotes. Explicitly states unconfirmed details." },
+  { id: 21, url: "https://www.mirror.co.uk/news/world-news/slovakia-robert-fico-shooting-live-32818490", title: "Robert Fico shooting latest: Prime Minister of Slovakia \'fighting for life\' after being shot", domain: "mirror.co.uk", country: "United Kingdom", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T17:15:00", notes: "Mirror UK live blog. Names officials, eyewitnesses. \'Reportedly\'. Timeline through live updates. \'Fighting for life\'." },
+  { id: 22, url: "https://www.dailymail.co.uk/debate/article-13423401/MARK-ALMOND-political-assassination-delicate-Europe.html", title: "MARK ALMOND: Not since 1914 has a political assassination been attempted at such a fraught moment for Europe", domain: "dailymail.co.uk", country: "United Kingdom", evidence: 1, uncertainty: 1, context: 1, affective: 2, conflict: 2, cta: 1, ts: "2024-05-15T21:00:00", notes: "Daily Mail opinion column. Highly dramatized historical comparison. No named sources or hedging. Minimal factual detail. Sensational framing." },
+  { id: 23, url: "https://www.lbc.co.uk/news/slovakian-pm-robert-fico-shot-in-the-stomach-in-suspected-assassination-bid/", title: "Slovakian PM fights for life after being shot in the stomach in suspected assassination attempt", domain: "lbc.co.uk", country: "United Kingdom", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T16:45:00", notes: "LBC. Names Caputova, eyewitnesses, sources. \'Alleged\'. Timeline. \'Fighting for his life\', \'assassination bid\'." },
+  { id: 24, url: "https://www.lbc.co.uk/news/slovakian-pm-serious-condition-still-surgery/", title: "Slovakian PM in \'extraordinarily serious\' condition and remains in surgery hours after shooting", domain: "lbc.co.uk", country: "United Kingdom", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T20:30:00", notes: "LBC update. Names Biden, Defense Min. \'Alleged\'. Timeline + reactions. Biden calls it \'horrific\'." },
+  { id: 25, url: "https://www.swissinfo.ch/eng/world-reacts-to-shooting-of-slovak-pm-robert-fico/77632456", title: "World reacts to shooting of Slovak PM Robert Fico", domain: "swissinfo.ch", country: "Switzerland", evidence: 2, uncertainty: 1, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T19:30:00", notes: "SwissInfo / Reuters. Names multiple world leaders with direct quotes. Definitive condemnation statements. Multi-stakeholder." },
+  { id: 26, url: "https://www.lrt.lt/en/news-in-english/19/2273825/baltic-leaders-condem-attack-on-slovak-pm-fico", title: "Baltic leaders condemn attack on Slovak PM Fico", domain: "lrt.lt", country: "Lithuania", evidence: 2, uncertainty: 1, context: 1, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T18:00:00", notes: "LRT Lithuania. Names Baltic leaders with X post quotes. Definitive condemnation. Just reactions, no timeline. \'Shocking\'." },
+  { id: 27, url: "https://armenpress.am/eng/news/1137166/", title: "Slovakia prime minister not in life-threatening condition – deputy PM", domain: "armenpress.am", country: "Armenia", evidence: 2, uncertainty: 2, context: 1, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T23:45:00", notes: "Armenpress. Names Taraba, cites Politico. Brief conditional update. Very short, just basic facts." },
+  { id: 28, url: "https://www.dailysabah.com/politics/diplomacy/erdogan-condemns-attempted-assassination-of-slovak-pm-fico", title: "Erdoğan condemns attempted assassination of Slovak PM Fico", domain: "dailysabah.com", country: "Turkey", evidence: 2, uncertainty: 1, context: 1, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T20:30:00", notes: "Daily Sabah. Names Erdogan, VP, advisor with quotes. Definitive condemnation. Just reactions. \'Heinous\', \'savage attacks\'." },
+  { id: 29, url: "https://www.hurriyetdailynews.com/slovak-pm-fights-for-his-life-as-leaders-condemn-assassination-attempt-193592", title: "Slovak PM fights for his life as leaders condemn assassination attempt", domain: "hurriyetdailynews.com", country: "Turkey", evidence: 2, uncertainty: 3, context: 2, affective: 2, conflict: 2, cta: 1, ts: "2024-05-15T17:45:00", notes: "Hürriyet Daily News. International condemnation roundup. Explicit uncertainty about motive and condition. Some adversarial framing of political divisions." },
+  { id: 30, url: "http://thepeninsulaqatar.com/article/15/05/2024/slovak-pm-suffers-life-threatening-wounds-in-assassination-attempt", title: "Slovak PM suffers life-threatening wounds in assassination attempt", domain: "thepeninsulaqatar.com", country: "Qatar", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T18:45:00", notes: "Peninsula Qatar. Names Caputova, Dennik N reporter, officials. \'Alleged\'. Timeline + political context. \'Shocked\'." },
+  { id: 31, url: "https://menafn.com/1108218528/Monstrous-Horrific-Vladimir-Putin-Joe-Biden-Others-Condemn-Attack-On-Slovak-PM-Robert-Fico", title: "\'Monstrous, Horrific\': Vladimir Putin, Joe Biden, Others Condemn Attack On Slovak PM", domain: "menafn.com", country: "Qatar", evidence: 2, uncertainty: 1, context: 1, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T19:45:00", notes: "MENAFN — Putin/Biden reactions. Names world leaders with quotes. Definitive statements. \'Monstrous, Horrific\'." },
+  { id: 32, url: "https://menafn.com/1108219769/Cowardly-Dastardly-Act-Says-PM-Modi-On-Attack-On-Slovak-PM-Robert-Fico", title: "\'Cowardly, Dastardly Act,\' Says PM Modi On Attack On Slovak PM Robert Fico", domain: "menafn.com", country: "Qatar", evidence: 3, uncertainty: 1, context: 1, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T20:15:00", notes: "MENAFN — Modi reaction. Names Modi with full direct X post quote, Interior Minister named. Definitive. \'Cowardly\'." },
+  { id: 33, url: "https://menafn.com/1108219621/Who-Is-Robert-Fico-Top-12-Things-You-Need-To-Know-About-Slovakias-Prime-Minister-Who-Was-Shot", title: "Who Is Robert Fico? Top 12 Things You Need To Know About Slovakia\'s Prime Minister", domain: "menafn.com", country: "Qatar", evidence: 2, uncertainty: 2, context: 3, affective: 1, conflict: 2, cta: 1, ts: "2024-05-15T21:15:00", notes: "MENAFN — Who is Fico explainer. Names Cintula, Nexta, quotes official pages. Notes evolving situation. Extensive background." },
+  { id: 34, url: "https://www.hindustantimes.com/world-news/slovak-pm-robert-fico-expected-to-survive-assassination-attempt-says-deputy-101715838826462.html", title: "Slovak PM Robert Fico expected to survive assassination attempt, says deputy", domain: "hindustantimes.com", country: "India", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T22:30:00", notes: "Hindustan Times / AP wire. Names officials with quotes. Hedging. Timeline + political context. Neutral." },
+  { id: 35, url: "https://indianexpress.com/article/world/slovak-pm-fico-no-longer-in-life-threatening-condition-after-being-shot-minister-says-9331992/", title: "Slovak PM Fico no longer in life-threatening condition after being shot, minister says", domain: "indianexpress.com", country: "India", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T07:00:00", notes: "Indian Express / Reuters. Names Taraba, Kalinak, Interior Min with quotes. Conditional language. Timeline + political motive." },
+  { id: 36, url: "https://timesofindia.indiatimes.com/world/europe/slovakia-pm-out-of-danger-after-being-shot-multiple-times/articleshow/110160150.cms", title: "Slovakia PM out of danger after being shot multiple times", domain: "timesofindia.indiatimes.com", country: "India", evidence: 2, uncertainty: 1, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T09:30:00", notes: "Times of India. Condition update with political background. Definitive tone. Names officials. Neutral reporting." },
+  { id: 37, url: "https://www.firstpost.com/explainers/slovakia-pm-robert-fico-assassination-attempt-71-year-old-suspect-13771415.html", title: "Who is the 71-year-old suspected to have shot Slovakia PM Robert Fico?", domain: "firstpost.com", country: "India", evidence: 2, uncertainty: 2, context: 3, affective: 2, conflict: 2, cta: 1, ts: "2024-05-16T02:00:00", notes: "Firstpost — who is suspect. Names Biden, Cintula. Notes evolving details. Detailed suspect background + political history." },
+  { id: 38, url: "https://www.firstpost.com/world/prime-minister-narendra-modi-wishes-slovakia-prime-minister-robert-fico-assaissination-plot13771410-13771410.html", title: "\'Strongly condemn this cowardly act\': PM Modi wishes speedy recovery to Slovak PM", domain: "firstpost.com", country: "India", evidence: 3, uncertainty: 1, context: 1, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T19:45:00", notes: "Firstpost — Modi condemns. Names Modi with full X quote, Interior Min. Definitive. \'Cowardly and dastardly act\'." },
+  { id: 39, url: "https://www.livemint.com/news/world/slovakian-pm-robert-fico-shot-pm-modi-deeply-shocked-says-strongly-condemn-cowardly-and-dastardly-act-11715830212361.html", title: "Slovakian PM Robert Fico shot: PM Modi \'deeply shocked\' says \'strongly condemn cowardly act\'", domain: "livemint.com", country: "India", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T20:45:00", notes: "Livemint — Modi + wire. Names Modi, Taraba, officials. Hedging in wire portion. Modi reaction + event context. \'Deeply shocked\'." },
+  { id: 40, url: "https://www.tribuneindia.com/news/world/slovakias-pm-battles-for-life-after-assassination-attempt-621677", title: "Slovakia PM battles for life after assassination attempt", domain: "tribuneindia.com", country: "India", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T17:30:00", notes: "Tribune India. Names Biden, officials, Reuters witness. \'Motive not immediately clear\'. Timeline + reactions. \'Horrific\'." },
+  { id: 41, url: "https://www.ibtimes.co.in/cowardly-dastardly-act-says-pm-modi-attack-slovak-pm-robert-fico-868221", title: "\'Cowardly, dastardly act,\' says PM Modi on attack on Slovak PM Robert Fico", domain: "ibtimes.co.in", country: "India", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T22:00:00", notes: "Ibtimes India. Names Taraba, Modi, Interior Min. Notes surgery outcome. Update + Modi reaction + context." },
+  { id: 42, url: "https://www.oneindia.com/international/slovakia-populist-prime-minister-shot-multiple-times-in-attempted-assassination-3825737.html", title: "Slovakia Populist Prime Minister Shot Multiple Times In Attempted Assassination", domain: "oneindia.com", country: "India", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 2, cta: 1, ts: "2024-05-15T16:30:00", notes: "OneIndia / PTI. Names officials, president. Hedging. Timeline + political context about Ukraine/Orbán. Describes pro-Russia stance." },
+  { id: 43, url: "https://www.freepressjournal.in/world/slovakian-pm-robert-fico-regains-consciousness-after-long-operation", title: "Slovakian PM Robert Fico Regains Consciousness After Long Operation", domain: "freepressjournal.in", country: "India", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T01:00:00", notes: "Free Press Journal. Names Taraba, Interior Min, attacker Cintula. Notes local media reports. Timeline + political motivation." },
+  { id: 44, url: "https://www.orissapost.com/cowardly-dastardly-act-says-pm-modi-on-attack-on-slovak-pm-robert-fico/", title: "Slovakia PM Fico shot in life-threatening attack", domain: "orissapost.com", country: "India", evidence: 3, uncertainty: 1, context: 1, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T20:00:00", notes: "Orissa POST. Names officials with direct quotes. Definitive tone. Brief, primarily event description with emotional language." },
+  { id: 45, url: "https://www.thehindubusinessline.com/news/world/slovakias-prime-minister-expected-to-survive-assassination-attempt-deputy-says/article68181428.ece", title: "Slovakia prime minister expected to survive assassination attempt, deputy says", domain: "thehindubusinessline.com", country: "India", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T22:45:00", notes: "NZ Herald / AP wire. Names officials. Hedging. Timeline + political context. Neutral." },
+  { id: 46, url: "https://www.devdiscourse.com/article/politics/2940216-pm-modi-condemns-assassination-attempt-on-slovakian-leader-as-cowardly", title: "PM Modi condemns assassination attempt on Slovakian leader as cowardly", domain: "devdiscourse.com", country: "India", evidence: 2, uncertainty: 1, context: 1, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T19:15:00", notes: "Devdiscourse — Modi condemns. Names Modi with direct quote. Definitive. Very brief. \'Cowardly and dastardly act\'." },
+  { id: 47, url: "https://www.devdiscourse.com/article/politics/2940184-slovakias-populist-prime-minister-shot-in-assassination-attempt-shocking-europe-before-elections", title: "Slovakia populist prime minister shot in assassination attempt, shocking Europe", domain: "devdiscourse.com", country: "India", evidence: 2, uncertainty: 1, context: 1, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T17:00:00", notes: "Devdiscourse — political motivation. Names Interior Min, Defense Min. Definitive \'no doubt\'. Very brief wire. Neutral." },
+  { id: 48, url: "https://www.thenews.com.pk/print/1189630-slovakia-pm-shot-injured-in-murder-attempt", title: "Slovakia PM shot, injured in murder attempt", domain: "thenews.com.pk", country: "Pakistan", evidence: 2, uncertainty: 2, context: 1, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T15:20:00", notes: "TheNews Pakistan. Names Dennik N, government statement. Notes from reporting. Brief event description. Neutral." },
+  { id: 50, url: "https://dunyanews.tv/en/World/812044-Slovak-PM-no-longer-in-life-threatening-condition-after-being-shot,-mini", title: "Slovak PM no longer in life-threatening condition after being shot, minister says", domain: "dunyanews.tv", country: "Pakistan", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T08:30:00", notes: "Dunya News / Reuters. Names Taraba, Kalinak with quotes. Conditional. Timeline + political motivation. Neutral." },
+  { id: 51, url: "https://myrepublica.nagariknetwork.com/news/slovak-pm-suffers-life-threatening-wounds-in-assassination-attempt/", title: "Slovak PM suffers life-threatening wounds in assassination attempt", domain: "myrepublica.nagariknetwork.com", country: "Nepal", evidence: 2, uncertainty: 2, context: 2, affective: 2, conflict: 1, cta: 1, ts: "2024-05-15T19:00:00", notes: "My Republica Nepal. Names Dennik N, Caputova, officials. \'Reportedly\'. Timeline + political context. \'Terrible\'." },
+  { id: 52, url: "https://bdnews24.com/world/026ffd804b38", title: "Slovak PM Fico in life-threatening condition", domain: "bdnews24.com", country: "Bangladesh", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T18:30:00", notes: "RNZ NZ / Reuters. Names Reuters witness, officials. \'Motive not immediately clear\'. Timeline + EU/NATO context. Neutral." },
+  { id: 53, url: "https://www.straitstimes.com/world/europe/slovak-pm-robert-fico-in-life-threatening-condition-after-being-shot", title: "Slovak PM Fico no longer in life-threatening condition after being shot, minister says", domain: "straitstimes.com", country: "Singapore", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T09:00:00", notes: "Straits Times / Reuters. Names Taraba, Kalinak with quotes. Conditional. Timeline + political motivation. Neutral." },
+  { id: 54, url: "https://www.kompas.id/baca/english/2024/05/16/en-operasi-pengangkatan-peluru-berhasil-pm-slovakia-lolos-dari-masa-kritis", title: "Bullet Removal Operation Successful, Slovak PM Escapes Critical Period", domain: "kompas.id", country: "Indonesia", evidence: 2, uncertainty: 2, context: 3, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T04:00:00", notes: "Kompas Indonesia. Names Taraba, Reuters witness, attacker details. Notes developing situation. Timeline + political background." },
+  { id: 55, url: "https://www.abc.net.au/news/2024-05-15/slovakia-prime-minister-robert-fico-shot/103853772", title: "Slovakia PM Robert Fico shot outside government meeting, official says his condition is life-threatening", domain: "abc.net.au", country: "Australia", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T21:30:00", notes: "ABC Australia. Names Interior Min, Defense Min, hospital spokesperson. Conditional updates. Timeline + \'assassination attempt\'." },
+  { id: 56, url: "https://www.abc.net.au/listen/programs/news-specials/slovakia-s-prime-minister-shot-in-attempted-assassination/103854424", title: "Slovakia prime minister shot in attempted assassination", domain: "abc.net.au", country: "Australia", evidence: 1, uncertainty: 1, context: 1, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T15:10:00", notes: "ABC Australia audio. Extremely brief — just one sentence describing the event. No named sources. No hedging. No context." },
+  { id: 57, url: "https://www.3aw.com.au/slovak-prime-minister-shot-in-shock-assassination-attempt/", title: "Slovak Prime Minister shot in shock assassination attempt", domain: "3aw.com.au", country: "Australia", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T23:00:00", notes: "3AW Melbourne. Names Dr Kizekova, Curtin University expert. \'Reportedly\'. Expert perspective on Fico\'s political role." },
+  { id: 58, url: "https://www.nzherald.co.nz/world/slovakias-prime-minister-robert-fico-expected-to-survive-assassination-attempt-deputy-says/JQLE4DERLNASPIJ5B2K2MVWVOI/", title: "Slovakia prime minister Robert Fico expected to survive assassination attempt, deputy says", domain: "nzherald.co.nz", country: "New Zealand", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 2, cta: 1, ts: "2024-05-15T23:45:00", notes: "NZ Herald / AP. Names officials with quotes. Hedging. Timeline + political background about Ukraine/Orbán." },
+  { id: 59, url: "https://www.odt.co.nz/news/world/slovak-pm-shot-multiple-times-assassination-attempt", title: "Slovak PM shot multiple times in assassination attempt", domain: "odt.co.nz", country: "New Zealand", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T21:15:00", notes: "ODT NZ / Reuters. Names Taraba, Kalinak with quotes. Conditional. Timeline + political motivation. Neutral." },
+  { id: 60, url: "https://www.rnz.co.nz/news/world/516920/slovak-pm-fico-in-life-threatening-condition-after-being-shot-government-says", title: "Slovak PM Fico in life-threatening condition after being shot, government says", domain: "rnz.co.nz", country: "New Zealand", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T19:00:00", notes: "RNZ / Reuters. Names witness, officials. \'Motive not immediately clear\'. Timeline + international condemnation. Neutral." },
+  { id: 61, url: "https://www.news24.com/news24/world/news/slovak-pm-fico-no-longer-in-life-threatening-condition-after-being-shot-minister-says-20240516", title: "Slovak PM Fico no longer in life-threatening condition after being shot, minister says", domain: "news24.com", country: "South Africa", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T08:00:00", notes: "News24 SA / Reuters. Names Taraba, Kalinak. Conditional. Timeline + political motivation. Neutral. Includes content warning." },
+  { id: 62, url: "https://www.myjoyonline.com/slovakia-pm-robert-fico-not-in-life-threatening-condition-deputy-pm/", title: "Slovakia PM Robert Fico not in life-threatening condition - Deputy PM", domain: "myjoyonline.com", country: "Ghana", evidence: 2, uncertainty: 3, context: 3, affective: 1, conflict: 2, cta: 1, ts: "2024-05-16T00:30:00", notes: "MyJoyOnline Ghana. Detailed report with explicit uncertainty markers. Full timeline and multiple stakeholder perspectives. Identifies political divisions." },
+  { id: 63, url: "https://www.dw.com/en/slovakia-pm-robert-fico-shot-in-assassination-attempt/a-69098098", title: "Slovakia PM Robert Fico shot in assassination attempt", domain: "dw.com", country: "Germany", evidence: 2, uncertainty: 3, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-15T17:00:00", notes: "DW. Names officials, hospital director with quotes. Explicitly notes \'reportedly\', unconfirmed details. Timeline + EU context." },
+  { id: 64, url: "https://www.geo.tv/latest/544858-slovak-pm-no-longer-in-life-threatening-condition-minister", title: "Slovak PM no longer in life-threatening condition: minister", domain: "geo.tv", country: "Pakistan", evidence: 2, uncertainty: 2, context: 2, affective: 1, conflict: 1, cta: 1, ts: "2024-05-16T08:45:00", notes: "Geo TV / Reuters. Names Taraba, Reuters witness, officials. Conditional. Timeline + political context. Neutral." },
+];
+
+// Ads popular around May 15-16, 2024. One pair per feed, distinct per feed.
+window.ADS = {
+  recency: [
+    { brand: "Netflix",       handle: "@netflix",     copy: "Bridgerton is back. 💎 Season 3 Part 1 — premiering tomorrow, May 16. Only on Netflix.", accent: "#e50914" },
+    { brand: "Paris 2024",    handle: "@paris2024",   copy: "100 days to go. Tickets for the Olympic Games are moving fast. paris2024.org", accent: "#1d4ed8" }
+  ],
+  engagement: [
+    { brand: "Taylor Swift | Eras Tour", handle: "@tstheerastour", copy: "THE ERAS TOUR IS IN EUROPE 🤍 Remaining dates announced. Don't miss it.", accent: "#c026d3" },
+    { brand: "Max",           handle: "@streamonmax", copy: "House of the Dragon returns. Season 2 premieres June 16. Only on Max. 🐉🔥", accent: "#000000" }
+  ],
+  epistemic: [
+    { brand: "Apple",         handle: "@apple",       copy: "The new iPad Pro. The thinnest product we've ever made. Powered by M4.", accent: "#1f2937" },
+    { brand: "UEFA EURO 2024",handle: "@euro2024",    copy: "The stage is set. Germany 2024 kicks off June 14. Be part of the spectacle.", accent: "#0ea5e9" }
+  ]
+};
+
+</script>
+<script>
+
+(function(){
+const CL=["#1d9bf0","#f91880","#00ba7c","#ffad1f","#7856ff","#ff7a00","#ff6b6b","#06b6d4","#a855f7","#22c55e","#ec4899","#eab308","#64748b","#f97316","#14b8a6"];
+function h(s){let v=0;for(let i=0;i<s.length;i++)v=(v*31+s.charCodeAt(i))|0;return Math.abs(v)}
+function av(d){const c=d.replace(/\.(com|co\.uk|co\.nz|org|edu|gov|eu|ch|lt|am|pk|id|de|in|tv|au|za|net|info)$/,"").split(".")[0];return{i:c.slice(0,2).toUpperCase(),c:CL[h(d)%CL.length]}}
+function hd(d){return"@"+d.replace(/\.(com|co\.uk|co\.nz|org|eu|ch|lt|am|pk|id|de|in|tv|au|za|net)$/,"")}
+const NM={"edition.cnn.com":"CNN International","cnn.com":"CNN","apnews.com":"Associated Press","npr.org":"NPR","foxnews.com":"Fox News","oann.com":"OANN","thenewamerican.com":"The New American","aljazeera.com":"Al Jazeera English","politico.eu":"POLITICO Europe","tmz.com":"TMZ","yahoo.com":"Yahoo News","news.antiwar.com":"Antiwar.com","nbcphiladelphia.com":"NBC Philadelphia","fox5atlanta.com":"FOX 5 Atlanta","wthr.com":"WTHR","wset.com":"ABC 13 News","wpsdlocal6.com":"WPSD Local 6","ksl.com":"KSL News","bbc.co.uk":"BBC News","mirror.co.uk":"The Mirror","dailymail.co.uk":"Daily Mail","lbc.co.uk":"LBC","swissinfo.ch":"SWI swissinfo.ch","lrt.lt":"LRT English","armenpress.am":"Armenpress","dailysabah.com":"Daily Sabah","hurriyetdailynews.com":"Hürriyet Daily News","thepeninsulaqatar.com":"The Peninsula","menafn.com":"MENAFN","hindustantimes.com":"Hindustan Times","indianexpress.com":"The Indian Express","timesofindia.indiatimes.com":"Times of India","firstpost.com":"Firstpost","livemint.com":"Mint","tribuneindia.com":"The Tribune","ibtimes.co.in":"IBTimes India","oneindia.com":"Oneindia","freepressjournal.in":"Free Press Journal","orissapost.com":"Orissa POST","thehindubusinessline.com":"The Hindu BusinessLine","devdiscourse.com":"Devdiscourse","thenews.com.pk":"The News International","dunyanews.tv":"Dunya News","myrepublica.nagariknetwork.com":"My Republica","bdnews24.com":"bdnews24.com","straitstimes.com":"The Straits Times","kompas.id":"Kompas","abc.net.au":"ABC News Australia","3aw.com.au":"3AW Melbourne","nzherald.co.nz":"NZ Herald","odt.co.nz":"Otago Daily Times","rnz.co.nz":"RNZ","news24.com":"News24","myjoyonline.com":"MyJoyOnline","dw.com":"DW News","geo.tv":"Geo News"};
+function dn(d){return NM[d]||d}
+function eng(a){return a.affective+a.conflict+a.cta}
+function epi(a){return 1.5*a.evidence+1.0*a.uncertainty+1.2*a.context-1.0*a.affective-0.8*a.cta}
+function wS(items,wts,n){const pool=items.map((it,i)=>({it,w:Math.max(wts[i],.0001)}));const out=[];while(out.length<n&&pool.length>0){const t=pool.reduce((s,p)=>s+p.w,0);let r=Math.random()*t;for(let j=0;j<pool.length;j++){r-=pool[j].w;if(r<=0){out.push(pool[j].it);pool.splice(j,1);break}}}return out}
+function fT(iso){const d=new Date(iso);const M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];let hr=d.getHours();const mn=d.getMinutes().toString().padStart(2,"0");const ap=hr>=12?"PM":"AM";hr=hr%12||12;return`${M[d.getMonth()]} ${d.getDate()}, ${hr}:${mn} ${ap}`}
+function mt(a){const b=eng(a),s=h(String(a.id)),j=.6+((s%1000)/1000)*.8;const lk=Math.round(Math.pow(b,3.4)*120*j);return{lk,rp:Math.round(lk*(.08+(s%17)/100)),rt:Math.round(lk*(.18+(s%13)/100)),vw:Math.round(lk*(18+s%11))}}
+function fN(n){if(n>=1e6)return(n/1e6).toFixed(1).replace(/\.0$/,"")+"M";if(n>=1e3)return(n/1e3).toFixed(1).replace(/\.0$/,"")+"K";return""+n}
+const IC={
+  rp:'<svg class="action-icon" viewBox="0 0 24 24"><path d="M1.75 12C1.75 6.7 6.22 2.25 12 2.25s10.25 4.45 10.25 9.75-4.47 9.75-10.25 9.75c-1.4 0-2.82-.29-4.1-.79L3 22l1.17-4.86C2.74 15.59 1.75 13.89 1.75 12z"/></svg>',
+  rt:'<svg class="action-icon" viewBox="0 0 24 24"><path d="M4.5 3.88l4.43 4.42-1.41 1.42L5.5 7.71V16h8.59l-2 2H3.5V7.71l-2 2.01-1.42-1.42 4.42-4.42zM19.5 20.12l-4.43-4.42 1.41-1.42 2.02 2.01V8h-8.59l2-2h8.59v10.29l2-2.01 1.42 1.42-4.42 4.42z"/></svg>',
+  lk:'<svg class="action-icon" viewBox="0 0 24 24"><path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91z"/></svg>',
+  vw:'<svg class="action-icon" viewBox="0 0 24 24"><path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"/></svg>',
+  bk:'<svg class="action-icon" viewBox="0 0 24 24"><path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5z"/></svg>'
+};
+const VER='<svg class="verified" viewBox="0 0 22 22" width="15" height="15" fill="currentColor"><path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"/></svg>';
+
+function tw(a,uid){
+  const v=av(a.domain),m=mt(a);
+  const url=a.url||("https://"+a.domain);
+  return`<div class="tweet"><div class="avatar" style="background:${v.c}">${v.i}</div><div class="tweet-body">
+  <div class="tweet-head"><span class="name">${dn(a.domain)}</span>${VER}<span class="handle">${hd(a.domain)}</span><span class="dot-sep">·</span><span class="timestamp">${fT(a.ts)}</span></div>
+  <div class="tweet-text t-title">${a.title}</div>
+  <a class="link-card" href="${url}" target="_blank" rel="noopener"><div class="lc-body"><span class="lc-domain">🔗 ${a.domain}</span><span class="lc-title">${a.title}</span><span class="lc-desc">${a.notes}</span></div></a>
+  <div class="actions-x"><div class="action-x">${IC.rp}<span>${fN(m.rp)}</span></div><div class="action-x">${IC.rt}<span>${fN(m.rt)}</span></div><div class="action-x">${IC.lk}<span>${fN(m.lk)}</span></div><div class="action-x">${IC.vw}<span>${fN(m.vw)}</span></div><div class="action-x">${IC.bk}</div></div>
+  </div></div>`}
+
+function adTw(a){
+  return`<div class="tweet ad"><div class="avatar" style="background:${a.accent}">${a.brand.slice(0,2).toUpperCase()}</div><div class="tweet-body">
+  <div class="promoted-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z"/></svg> Promoted</div>
+  <div class="tweet-head"><span class="name">${a.brand}</span><span class="handle">${a.handle}</span></div>
+  <div class="tweet-text">${a.copy}</div>
+  <div class="ad-card"><div class="ad-banner" style="background:${a.accent}">${a.brand}</div><div class="ad-meta"><span>${a.handle.replace("@","")}.com</span><span class="ad-cta">Learn more →</span></div></div>
+  <div class="actions-x"><div class="action-x">${IC.rp}</div><div class="action-x">${IC.rt}</div><div class="action-x">${IC.lk}</div><div class="action-x">${IC.vw}</div><div class="action-x">${IC.bk}</div></div>
+  </div></div>`}
+
+window.renderFeed=function(){
+  const ft=window.FEED_TYPE,all=window.ARTICLES,ads=window.ADS[ft]||[];let picked;
+  if(ft==="recency"){picked=all.slice().sort((a,b)=>new Date(b.ts)-new Date(a.ts)).slice(0,12)}
+  else if(ft==="engagement"){picked=all.slice().sort((a,b)=>eng(b)-eng(a)||new Date(b.ts)-new Date(a.ts)).slice(0,12)}
+  else{const raw=all.map(epi),mn=Math.min(...raw),wts=raw.map(v=>Math.pow((v-mn)+.5,2));picked=wS(all,wts,12);picked.sort((a,b)=>epi(b)-epi(a))}
+  const cards=picked.map((a,i)=>tw(a,i));
+  const out=cards.slice();[3,8].forEach((p,i)=>{if(ads[i]&&p<=out.length)out.splice(p+i,0,adTw(ads[i]))});
+  // store article IDs shown
+  window._shownIDs=picked.map(a=>a.id);
+  document.getElementById("feed").innerHTML=out.join("");
+}
+})();
+
+</script>
+<script>
+window.FEED_TYPE="recency";
+
+const PAGES=document.querySelectorAll('.page');
+const TOTAL=PAGES.length;
+let cur=0;
+const R={}; // all responses
+
+function show(idx){
+  PAGES.forEach((p,i)=>{p.classList.toggle('active',i===idx)});
+  cur=idx;
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.progress-bar').style.width=((idx+1)/TOTAL*100)+'%';
+}
+function next(){if(cur<TOTAL-1)show(cur+1)}
+function back(){if(cur>0)show(cur-1)}
+
+// Generic pick handler for radio-style buttons
+function pick(groupId,val,el){
+  R[groupId]=val;
+  el.closest('.opts').querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// Likert
+function pickL(groupId,val,el){
+  R[groupId]=val;
+  el.closest('.dots').querySelectorAll('.dot-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// Slider
+function slideConf(qid,el){
+  R[qid]=el.value;
+  document.getElementById(qid+'_val').textContent=el.value;
+}
+
+// Text input
+function textIn(qid,el){
+  R[qid]=el.value;
+}
+
+// On feed page shown, render feed + store IDs
+function initFeed(){
+  window.renderFeed();
+  setTimeout(()=>{
+    if(window._shownIDs) R['articles_shown']=window._shownIDs.join(',');
+  },200);
+}
+
+// Submit via fetch to the hidden Netlify form
+function submitSurvey(){
+  R['feed_type']=window.FEED_TYPE;
+  // Default confidence values for unanswered sliders
+  for(let i=7;i<=16;i++){const k='q'+i+'_conf';if(!R[k])R[k]='50';}
+
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLSTPE2622-wyDFpuAgLtT4hYtuBXXQo5hHKFRMRkcv53wjJ0hEY00VR7J-VTpnk6y/exec';
+
+  try {
+    // 기존 fetch 방식 대신 Form submit 방식 사용
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = APPS_SCRIPT_URL;
+    form.target = 'hidden_iframe'; // 페이지 이동 방지
+
+    // 데이터 추가
+    for (const [key, value] of Object.entries(R)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    }
+
+    // hidden iframe 추가 (페이지 이동 방지)
+    let iframe = document.querySelector('iframe[name="hidden_iframe"]');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.name = 'hidden_iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+
+    // 완료 페이지 표시 (약간의 딜레이 후)
+    setTimeout(() => {
+      show(TOTAL - 1);
+      // 폼 제거
+      document.body.removeChild(form);
+    }, 500);
+  } catch (error) {
+    console.error('Survey submission error:', error);
+    show(TOTAL - 1); // Still show completion page even if error
+  }
+}
+
+show(0);
+
+// Render feed when page 1 becomes visible
+const obs=new MutationObserver(()=>{if(document.getElementById('p1').classList.contains('active'))initFeed()});
+obs.observe(document.getElementById('p1'),{attributes:true,attributeFilter:['class']});
+</script>
+</body>
+</html>
