@@ -12,7 +12,7 @@ This Github repo contains all relevant files pertaining to the project, which ex
 
 ## Methodology
 
-![Study Design](assets/study_design_flowchart.svg)
+![Study Design](assets/study_design.svg)
 
 ## Results
 
