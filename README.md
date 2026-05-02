@@ -1,12 +1,10 @@
 # Does Feed Curation Shape What Readers Know?
 
-_A Controlled Experiment on Algorithmic News Exposure_
+**Authors:** Zeynep Guzey, Jaeyun Stella Seo, Inseon Hwang, Jocelyn Ding  
+**Course:** CS 294-273 Designing Algorithmic Media, Spring 2026  
+**Instructor:** Professor Jonathan Stray
 
-Zeynep Guzey, Jaeyun Stella Seo, Inseon Hwang, Jocelyn Ding
-
-CS 294-273 Designing Algorithmic Media, Spring 2026
-
-Professor Jonathan Stray
+## Abstract
 
 This Github repo contains all relevant files pertaining to the project, which explores how news feed curation can affect beliefs in the aftermath of a crisis. In particular, we build a case study around the assassination attempt of Slovakian Prime Minister Robert Fico in 2024. We find that though users of the feeds do not perceive them to be any different (eg: more trustworthy, more biased), users of the engagement-optimized feeds are confidently wrong about their answers to factual questions surrounding the event.
 
