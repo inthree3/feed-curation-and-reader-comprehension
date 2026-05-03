@@ -1,4 +1,4 @@
-# Does Feed Curation Shape What Readers Know?
+# Does Feed Curation Shape What Readers Know? A Controlled Experiment on Algorithmic News Exposure
 
 **Authors:** Zeynep Guzey, Jaeyun Stella Seo, Inseon Hwang, Jocelyn Ding  
 **Course:** CS 294-273 Designing Algorithmic Media, Spring 2026  
