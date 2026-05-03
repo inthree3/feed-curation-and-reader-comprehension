@@ -26,7 +26,7 @@ We also sought to differentiate from mainstream engagement-based approaches by a
 
 ## Results
 
-## Liminations & Future Work
+## Limitations & Future Work
 
 1. The two baseline algorithms do not fully reflect real-world algorithms.
    For the recency feed, we assumed that readers encounter the feed 24 hours after the first article of a crisis is published. However, the timing of exposure — whether earlier or later — can affect readers' understanding.
